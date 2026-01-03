@@ -1236,6 +1236,8 @@ void KaleidoScope_UpdateItemEquip(PlayState* play) {
             gSaveContext.equips.cButtonSlots[pauseCtx->equipTargetCBtn] = pauseCtx->equipTargetSlot;
             Interface_LoadItemIcon1(play, targetButtonIndex);
 
+            GameInteractor_ExecuteOnItemEquip(targetButtonIndex, pauseCtx->equipTargetSlot, pauseCtx->equipTargetItem);
+
             pauseCtx->unk_1E4 = 0;
             sEquipMoveTimer = 10;
             WREG(90) = 320;

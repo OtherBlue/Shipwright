@@ -34,6 +34,11 @@ void GameInteractor_ExecuteOnItemReceiveHooks(GetItemEntry itemEntry) {
     GameInteractor::Instance->ExecuteHooksForFilter<GameInteractor::OnItemReceive>(itemEntry);
 }
 
+void GameInteractor_ExecuteOnItemEquip(int16_t buttonIndex, int16_t inventorySlot, uint16_t itemId) {
+    GameInteractor::Instance->ExecuteHooks<GameInteractor::OnItemEquip>(buttonIndex, inventorySlot, itemId);
+    GameInteractor::Instance->ExecuteHooksForFilter<GameInteractor::OnItemEquip>(buttonIndex, inventorySlot, itemId);
+}
+
 void GameInteractor_ExecuteOnEquipmentDelete(int16_t equipmentType, uint16_t equipValue) {
     GameInteractor::Instance->ExecuteHooks<GameInteractor::OnEquipmentDelete>(equipmentType, equipValue);
     GameInteractor::Instance->ExecuteHooksForFilter<GameInteractor::OnEquipmentDelete>(equipmentType, equipValue);
@@ -227,6 +232,12 @@ void GameInteractor_ExecuteOnPlayerShieldControl(float_t* sp50, float_t* sp54) {
 
 void GameInteractor_ExecuteOnPlayerProcessStick() {
     GameInteractor::Instance->ExecuteHooks<GameInteractor::OnPlayerProcessStick>();
+}
+
+void GameInteractor_ExecuteOnPlayerPostLimbDraw(Player* player, s32 limbIndex) {
+    GameInteractor::Instance->ExecuteHooks<GameInteractor::OnPlayerPostLimbDraw>(player, limbIndex);
+    GameInteractor::Instance->ExecuteHooksForID<GameInteractor::OnPlayerPostLimbDraw>(limbIndex, player, limbIndex);
+    GameInteractor::Instance->ExecuteHooksForFilter<GameInteractor::OnPlayerPostLimbDraw>(player, limbIndex);
 }
 
 void GameInteractor_ExecuteOnPlayDestroy() {

@@ -2020,6 +2020,8 @@ void Player_PostLimbDrawGameplay(PlayState* play, s32 limbIndex, Gfx** dList, Ve
             Actor_SetFeetPos(&this->actor, limbIndex, PLAYER_LIMB_L_FOOT, vec, PLAYER_LIMB_R_FOOT, vec);
         }
     }
+
+    GameInteractor_ExecuteOnPlayerPostLimbDraw(this, limbIndex);
 }
 
 u32 func_80091738(PlayState* play, u8* segment, SkelAnime* skelAnime) {

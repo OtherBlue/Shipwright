@@ -776,7 +776,10 @@ void SohMenu::AddMenuEnhancements() {
     AddWidget(path, "Ask to Equip New Items", WIDGET_CVAR_CHECKBOX)
         .CVar(CVAR_ENHANCEMENT("AskToEquip"))
         .Options(CheckboxOptions().Tooltip("Adds a prompt to equip newly-obtained Swords, Shields, and Tunics."));
-
+    AddWidget(path, "Visible Equipment", WIDGET_CVAR_CHECKBOX)
+        .CVar(CVAR_ENHANCEMENT("VisibleEquipment"))
+        .Options(CheckboxOptions().Tooltip("Makes equipped items visible on Link's model."));
+        
     AddWidget(path, "Ocarina", WIDGET_SEPARATOR_TEXT);
     AddWidget(path, "Prevent Dropped Ocarina Inputs", WIDGET_CVAR_CHECKBOX)
         .CVar(CVAR_ENHANCEMENT("DpadNoDropOcarinaInput"))
