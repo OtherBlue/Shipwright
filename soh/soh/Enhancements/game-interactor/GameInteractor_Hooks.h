@@ -14,6 +14,7 @@ void GameInteractor_ExecuteOnLoadGame(int32_t fileNum);
 void GameInteractor_ExecuteOnExitGame(int32_t fileNum);
 void GameInteractor_ExecuteOnGameStateMainStart();
 void GameInteractor_ExecuteOnGameFrameUpdate();
+void GameInteractor_ExecuteOnCameraState(PlayState* play);
 void GameInteractor_ExecuteOnItemReceiveHooks(GetItemEntry itemEntry);
 void GameInteractor_ExecuteOnItemEquip(int16_t buttonIndex, int16_t inventorySlot, uint16_t itemId);
 void GameInteractor_ExecuteOnEquipmentDelete(int16_t equipmentType, uint16_t equipValue);
