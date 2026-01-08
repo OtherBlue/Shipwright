@@ -18,6 +18,7 @@ void DummyPlayer_Update(Actor* actor, PlayState* play);
 static void UpdatePatchCustomEquipmentDlists();
 static void RefreshCustomEquipment();
 static bool HasDummyPlayers();
+static void ApplyBottlePatches();
 
 static const char* ResolveCustomChain(std::initializer_list<const char*> paths) {
     const char* fallback = nullptr;
@@ -89,6 +90,7 @@ static void PatchCustomEquipment() {
     COND_HOOK(OnLinkEquipmentChange, true, UpdateCustomEquipment);
     COND_HOOK(OnLinkSkeletonInit, true, UpdateCustomEquipment);
     COND_HOOK(OnAssetAltChange, true, UpdateCustomEquipment);
+    COND_HOOK(OnPlayerBottleRender, true, []() { ApplyBottlePatches(); });
 }
 
 static RegisterShipInitFunc initFunc(PatchCustomEquipment);
@@ -484,18 +486,37 @@ static void ApplyCommonEquipmentPatches() {
 }
 
 static void ApplyBottlePatches() {
+    static u8 lastBottleItem = ITEM_NONE;
+
     const bool isChild = LINK_IS_CHILD;
     const char* bottleDL = isChild ? gLinkChildBottleDL : gLinkAdultBottleDL;
 
-    // Get the current bottle item on the active C-button
+    if (gPlayState == nullptr) {
+        return;
+    }
+
+    Player* player = GET_PLAYER(gPlayState);
+    if (player == nullptr) {
+        return;
+    }
+
+    // Get the current bottle item based on the active bottle action
     u8 bottleItem = ITEM_NONE;
-    for (int i = 0; i < 4; i++) {
-        u8 cButton = gSaveContext.equips.buttonItems[i + 1]; // C-buttons are indices 1-4
-        if (cButton >= ITEM_BOTTLE && cButton <= ITEM_POE) {
-            bottleItem = cButton;
-            break;
+    if (player->itemAction >= PLAYER_IA_BOTTLE && player->itemAction <= PLAYER_IA_BOTTLE_FAIRY) {
+        s8 buttonPressed = player->heldItemButton;
+        if (buttonPressed > 0 && buttonPressed < 8) {
+            u8 inventorySlot = gSaveContext.equips.cButtonSlots[buttonPressed - 1];
+            if (inventorySlot >= SLOT_BOTTLE_1 && inventorySlot <= SLOT_BOTTLE_4) {
+                bottleItem = gSaveContext.inventory.items[inventorySlot];
+            }
         }
     }
+
+    // Only update if the bottle changed
+    if (bottleItem == lastBottleItem) {
+        return;
+    }
+    lastBottleItem = bottleItem;
 
     switch (bottleItem) {
         case ITEM_BOTTLE:
