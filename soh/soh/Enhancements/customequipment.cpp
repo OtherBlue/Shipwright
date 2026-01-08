@@ -495,6 +495,12 @@ static void ApplyBottlePatches() {
     }
 
     switch (bottleItem) {
+        case ITEM_BOTTLE:
+            ApplyPatchEntries({
+                { gLinkAdultBottleDL, gCustomBottleDL, "customBottleEmpty1", "customBottleEmpty2", nullptr, nullptr },
+            });
+            break;
+
         case ITEM_POTION_RED:
             ApplyPatchEntries({
                 { gLinkAdultBottleDL, gCustomBottleDL, "customBottleRedPotion1", "customBottleRedPotion2",
