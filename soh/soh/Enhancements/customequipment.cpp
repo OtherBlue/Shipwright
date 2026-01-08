@@ -484,6 +484,9 @@ static void ApplyCommonEquipmentPatches() {
 }
 
 static void ApplyBottlePatches() {
+    const bool isChild = LINK_IS_CHILD;
+    const char* bottleDL = isChild ? gLinkChildBottleDL : gLinkAdultBottleDL;
+
     // Get the current bottle item on the active C-button
     u8 bottleItem = ITEM_NONE;
     for (int i = 0; i < 4; i++) {
@@ -497,90 +500,90 @@ static void ApplyBottlePatches() {
     switch (bottleItem) {
         case ITEM_BOTTLE:
             ApplyPatchEntries({
-                { gLinkAdultBottleDL, gCustomBottleDL, "customBottleEmpty1", "customBottleEmpty2", nullptr, nullptr },
+                { bottleDL, gCustomBottleDL, "customBottleEmpty1", "customBottleEmpty2", nullptr, nullptr },
             });
             break;
 
         case ITEM_POTION_RED:
             ApplyPatchEntries({
-                { gLinkAdultBottleDL, gCustomBottleDL, "customBottleRedPotion1", "customBottleRedPotion2",
+                { bottleDL, gCustomBottleDL, "customBottleRedPotion1", "customBottleRedPotion2",
                   "customBottleRedPotion3", gCustomBottleRedPotionContentsDL },
             });
             break;
 
         case ITEM_POTION_GREEN:
             ApplyPatchEntries({
-                { gLinkAdultBottleDL, gCustomBottleDL, "customBottleGreenPotion1", "customBottleGreenPotion2",
+                { bottleDL, gCustomBottleDL, "customBottleGreenPotion1", "customBottleGreenPotion2",
                   "customBottleGreenPotion3", gCustomBottleGreenPotionContentsDL },
             });
             break;
 
         case ITEM_POTION_BLUE:
             ApplyPatchEntries({
-                { gLinkAdultBottleDL, gCustomBottleDL, "customBottleBluePotion1", "customBottleBluePotion2",
+                { bottleDL, gCustomBottleDL, "customBottleBluePotion1", "customBottleBluePotion2",
                   "customBottleBluePotion3", gCustomBottleBluePotionContentsDL },
             });
             break;
 
         case ITEM_FAIRY:
             ApplyPatchEntries({
-                { gLinkAdultBottleDL, gCustomBottleDL, "customBottleFairy1", "customBottleFairy2", "customBottleFairy3",
+                { bottleDL, gCustomBottleDL, "customBottleFairy1", "customBottleFairy2", "customBottleFairy3",
                   gCustomBottleFairyContentsDL },
             });
             break;
 
         case ITEM_FISH:
             ApplyPatchEntries({
-                { gLinkAdultBottleDL, gCustomBottleDL, "customBottleFish1", "customBottleFish2", "customBottleFish3",
+                { bottleDL, gCustomBottleDL, "customBottleFish1", "customBottleFish2", "customBottleFish3",
                   gCustomBottleFishContentsDL },
             });
             break;
 
         case ITEM_MILK_BOTTLE:
             ApplyPatchEntries({
-                { gLinkAdultBottleDL, gCustomBottleDL, "customBottleMilk1", "customBottleMilk2", "customBottleMilk3",
+                { bottleDL, gCustomBottleDL, "customBottleMilk1", "customBottleMilk2", "customBottleMilk3",
                   gCustomBottleMilkContentsDL },
             });
             break;
 
         case ITEM_MILK_HALF:
             ApplyPatchEntries({
-                { gLinkAdultBottleDL, gCustomBottleDL, "customBottleMilkHalf1", "customBottleMilkHalf2",
-                  "customBottleMilkHalf3", gCustomBottleMilkHalfContentsDL },
+                { bottleDL, gCustomBottleDL, "customBottleMilkHalf1", "customBottleMilkHalf2", "customBottleMilkHalf3",
+                  gCustomBottleMilkHalfContentsDL },
             });
             break;
 
         case ITEM_LETTER_RUTO:
             ApplyPatchEntries({
-                { gLinkAdultBottleDL, gCustomBottleDL, "customBottleLetter1", "customBottleLetter2",
-                  "customBottleLetter3", gCustomBottleLetterContentsDL },
+                { bottleDL, gCustomBottleDL, "customBottleLetter1", "customBottleLetter2", "customBottleLetter3",
+                  gCustomBottleLetterContentsDL },
             });
             break;
 
         case ITEM_BLUE_FIRE:
             ApplyPatchEntries({
-                { gLinkAdultBottleDL, gCustomBottleDL, "customBottleBlueFire1", "customBottleBlueFire2",
-                  "customBottleBlueFire3", gCustomBottleBlueFireContentsDL },
+                { bottleDL, gCustomBottleDL, "customBottleBlueFire1", "customBottleBlueFire2", "customBottleBlueFire3",
+                  gCustomBottleBlueFireContentsDL },
             });
             break;
 
         case ITEM_BUG:
             ApplyPatchEntries({
-                { gLinkAdultBottleDL, gCustomBottleDL, "customBottleBug1", "customBottleBug2", "customBottleBug3",
+                { bottleDL, gCustomBottleDL, "customBottleBug1", "customBottleBug2", "customBottleBug3",
                   gCustomBottleBugContentsDL },
             });
             break;
 
         case ITEM_BIG_POE:
             ApplyPatchEntries({
-                { gLinkAdultBottleDL, gCustomBottleDL, "customBottleBigPoe1", "customBottleBigPoe2",
-                  "customBottleBigPoe3", gCustomBottleBigPoeContentsDL },
+                { bottleDL, gCustomBottleDL, "customBottleBigPoe1", "customBottleBigPoe2", "customBottleBigPoe3",
+                  gCustomBottleBigPoeContentsDL },
             });
             break;
 
         case ITEM_POE:
             ApplyPatchEntries({
-                { gLinkAdultBottleDL, gCustomBottleDL, "customBottlePoe1", "customBottlePoe2", "customBottlePoe3",
+                { bottleDL, gCustomBottleDL, "customBottlePoe1", "customBottlePoe2", "customBottlePoe3",
                   gCustomBottlePoeContentsDL },
             });
             break;
