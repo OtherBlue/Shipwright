@@ -86,7 +86,7 @@ static void UpdateCustomEquipment() {
     }
 
     RefreshCustomEquipment();
-    
+
     // Mark bottles as dirty so they'll update on next render
     sBottlePatchDirty = true;
 }
@@ -117,7 +117,8 @@ static void UpdateBottlePatches() {
     }
 
     // Only render billboard for fairy bottle action
-    if (player->itemAction != PLAYER_IA_BOTTLE_FAIRY || !ResourceGetIsCustomByName(gCustomBottleFairyContentsBillboardDL)) {
+    if (player->itemAction != PLAYER_IA_BOTTLE_FAIRY ||
+        !ResourceGetIsCustomByName(gCustomBottleFairyContentsBillboardDL)) {
         return;
     }
 
