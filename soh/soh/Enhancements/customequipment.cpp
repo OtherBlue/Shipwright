@@ -19,6 +19,9 @@ static void UpdatePatchCustomEquipmentDlists();
 static void RefreshCustomEquipment();
 static bool HasDummyPlayers();
 static void ApplyBottlePatches();
+static void UpdateBottlePatches();
+
+static bool sBottlePatchDirty = false;
 
 static const char* ResolveCustomChain(std::initializer_list<const char*> paths) {
     const char* fallback = nullptr;
@@ -83,6 +86,9 @@ static void UpdateCustomEquipment() {
     }
 
     RefreshCustomEquipment();
+    
+    // Mark bottles as dirty so they'll update on next render
+    sBottlePatchDirty = true;
 }
 
 static void PatchCustomEquipment() {
@@ -90,10 +96,17 @@ static void PatchCustomEquipment() {
     COND_HOOK(OnLinkEquipmentChange, true, UpdateCustomEquipment);
     COND_HOOK(OnLinkSkeletonInit, true, UpdateCustomEquipment);
     COND_HOOK(OnAssetAltChange, true, UpdateCustomEquipment);
-    COND_HOOK(OnPlayerBottleRender, true, []() { ApplyBottlePatches(); });
+    COND_HOOK(OnPlayerBottleRender, true, UpdateBottlePatches);
 }
 
 static RegisterShipInitFunc initFunc(PatchCustomEquipment);
+
+static void UpdateBottlePatches() {
+    if (sBottlePatchDirty) {
+        ApplyBottlePatches();
+        sBottlePatchDirty = false;
+    }
+}
 
 static void RefreshCustomEquipment() {
     if (!GameInteractor::IsSaveLoaded() || gPlayState == NULL || GET_PLAYER(gPlayState) == nullptr) {
@@ -512,8 +525,8 @@ static void ApplyBottlePatches() {
         }
     }
 
-    // Only update if the bottle changed
-    if (bottleItem == lastBottleItem) {
+    // Only update if the bottle changed or we're not dirty (dirty means forced update from alt asset toggle)
+    if (!sBottlePatchDirty && bottleItem == lastBottleItem) {
         return;
     }
     lastBottleItem = bottleItem;
@@ -648,7 +661,6 @@ void UpdatePatchCustomEquipmentDlists() {
     }
 
     ApplyCommonEquipmentPatches();
-    ApplyBottlePatches();
 }
 
 static bool HasDummyPlayers() {
