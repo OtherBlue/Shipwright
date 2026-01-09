@@ -105,6 +105,34 @@ static void UpdateBottlePatches() {
     // Always check for bottle changes, let ApplyBottlePatches decide if patching is needed
     ApplyBottlePatches();
     sBottlePatchDirty = false;
+
+    // Render billboarded fairy contents if present
+    if (gPlayState == nullptr || !ResourceMgr_IsAltAssetsEnabled()) {
+        return;
+    }
+
+    Player* player = GET_PLAYER(gPlayState);
+    if (player == nullptr) {
+        return;
+    }
+
+    // Only render billboard for fairy bottle action
+    if (player->itemAction != PLAYER_IA_BOTTLE_FAIRY || !ResourceGetIsCustomByName(gCustomBottleFairyContentsBillboardDL)) {
+        return;
+    }
+
+    // Render the billboarded fairy part
+    GraphicsContext* gfxCtx = gPlayState->state.gfxCtx;
+    Gfx** polyXluP = &gfxCtx->polyXlu.p;
+    Gfx* polyXlu = *polyXluP;
+
+    Matrix_Push();
+    Matrix_ReplaceRotation(&gPlayState->billboardMtxF);
+    gSPMatrix(polyXlu++, MATRIX_NEWMTX(gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
+    gSPDisplayList(polyXlu++, ResourceMgr_LoadGfxByName(gCustomBottleFairyContentsBillboardDL));
+    Matrix_Pop();
+
+    *polyXluP = polyXlu;
 }
 
 static void RefreshCustomEquipment() {

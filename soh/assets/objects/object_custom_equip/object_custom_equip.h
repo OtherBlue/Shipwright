@@ -129,6 +129,9 @@ static const ALIGN_ASSET(2) char gCustomBottleBluePotionContentsDL[] = dgCustomB
 #define dgCustomBottleFairyContentsDL "__OTR__objects/object_custom_equip/gCustomBottleFairyContentsDL"
 static const ALIGN_ASSET(2) char gCustomBottleFairyContentsDL[] = dgCustomBottleFairyContentsDL;
 
+#define dgCustomBottleFairyContentsBillboardDL "__OTR__objects/object_custom_equip/gCustomBottleFairyContentsBillboardDL"
+static const ALIGN_ASSET(2) char gCustomBottleFairyContentsBillboardDL[] = dgCustomBottleFairyContentsBillboardDL;
+
 #define dgCustomBottleFishContentsDL "__OTR__objects/object_custom_equip/gCustomBottleFishContentsDL"
 static const ALIGN_ASSET(2) char gCustomBottleFishContentsDL[] = dgCustomBottleFishContentsDL;
 
