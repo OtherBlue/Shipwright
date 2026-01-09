@@ -102,10 +102,9 @@ static void PatchCustomEquipment() {
 static RegisterShipInitFunc initFunc(PatchCustomEquipment);
 
 static void UpdateBottlePatches() {
-    if (sBottlePatchDirty) {
-        ApplyBottlePatches();
-        sBottlePatchDirty = false;
-    }
+    // Always check for bottle changes, let ApplyBottlePatches decide if patching is needed
+    ApplyBottlePatches();
+    sBottlePatchDirty = false;
 }
 
 static void RefreshCustomEquipment() {
