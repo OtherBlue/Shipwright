@@ -18,7 +18,7 @@ extern PlayState* gPlayState;
 #define CVAR_VISIBLEEQUIPMENT_VALUE CVarGetInteger(CVAR_VISIBLEEQUIPMENT_NAME, CVAR_VISIBLEEQUIPMENT_DEFAULT)
 #define CVAR_VISIBLEEQUIPMENT_SET (CVAR_VISIBLEEQUIPMENT_VALUE != CVAR_VISIBLEEQUIPMENT_DEFAULT)
 
-void RegisterBottleOnWaist() {
+void RenderBottlesOnTorso() {
     // Position and rotation data for each bottle slot
     static const struct {
         s16 rotY;
@@ -109,7 +109,7 @@ void RegisterBottleOnWaist() {
 }
 
 void RegisterAllEquipmentVisible() {
-    RegisterBottleOnWaist();
+    RenderBottlesOnTorso();
 }
 
 static RegisterShipInitFunc initFunc(RegisterAllEquipmentVisible, { CVAR_VISIBLEEQUIPMENT_NAME });
