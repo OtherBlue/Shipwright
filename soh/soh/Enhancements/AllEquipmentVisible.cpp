@@ -18,117 +18,17 @@ extern PlayState* gPlayState;
 #define CVAR_VISIBLEEQUIPMENT_VALUE CVarGetInteger(CVAR_VISIBLEEQUIPMENT_NAME, CVAR_VISIBLEEQUIPMENT_DEFAULT)
 #define CVAR_VISIBLEEQUIPMENT_SET (CVAR_VISIBLEEQUIPMENT_VALUE != CVAR_VISIBLEEQUIPMENT_DEFAULT)
 
-// Bottle tracking structure
-typedef struct {
-    s8 equippedButton; // Which button index this bottle is equipped to (-1 if not equipped)
-    s8 inventorySlot;  // Which inventory slot this bottle belongs to (0-3 for SLOT_BOTTLE_1 through SLOT_BOTTLE_4)
-    u8 itemId;         // What item is in this slot (ITEM_NONE, ITEM_BOTTLE, ITEM_POTION_RED, etc.)
-} BottleInfo;
-
-// Track info for all 4 bottle inventory slots
-static BottleInfo sBottles[4] = {
-    {-1, 0, ITEM_NONE}, // Bottle slot 1
-    {-1, 1, ITEM_NONE}, // Bottle slot 2
-    {-1, 2, ITEM_NONE}, // Bottle slot 3
-    {-1, 3, ITEM_NONE}  // Bottle slot 4
-};
-
-// Track which bottle slot is currently being used (in action)
-static s8 sActiveBottleSlot = -1;
-
 void RegisterBottleOnWaist() {
-    // Hook to track when a bottle action is active
-    COND_HOOK(OnPlayerUpdate, CVAR_VISIBLEEQUIPMENT_SET, []() {
-        if (!GameInteractor::IsSaveLoaded()) {
-            return;
-        }
-        
-        Player* player = GET_PLAYER(gPlayState);
-        
-        // Check if a bottle action is happening
-        if (player->itemAction >= PLAYER_IA_BOTTLE && player->itemAction <= PLAYER_IA_BOTTLE_FAIRY) {
-            if (sActiveBottleSlot < 0) {
-                // Bottle action just started - find which bottle slot is equipped to this button
-                s8 buttonPressed = player->heldItemButton;
-                for (int i = 0; i < 4; i++) {
-                    if (sBottles[i].equippedButton == buttonPressed) {
-                        sActiveBottleSlot = i;
-                        break;
-                    }
-                }
-            }
-        } else {
-            // No bottle action, reset and update the bottle that was just used
-            if (sActiveBottleSlot >= 0) {
-                // Update the bottle's item from inventory
-                sBottles[sActiveBottleSlot].itemId = gSaveContext.inventory.items[SLOT_BOTTLE_1 + sActiveBottleSlot];
-                sActiveBottleSlot = -1;
-            }
-        }
-    });
-    
-    // Hook to initialize bottle data when save loads
-    COND_HOOK(OnLoadGame, CVAR_VISIBLEEQUIPMENT_SET, [](int16_t fileNum) {
-        // Update bottle inventory items from save data
-        for (int i = 0; i < 4; i++) {
-            sBottles[i].itemId = gSaveContext.inventory.items[SLOT_BOTTLE_1 + i];
-            sBottles[i].equippedButton = -1; // Reset equipped button
-        }
-        
-        // Check C-button and D-pad slots (buttons 1-7, cButtonSlots is 0-indexed for these)
-        for (int buttonIndex = 1; buttonIndex < 8; buttonIndex++) {
-            u8 inventorySlot = gSaveContext.equips.cButtonSlots[buttonIndex - 1];
-            
-            // Check if this slot is a bottle slot
-            if (inventorySlot >= SLOT_BOTTLE_1 && inventorySlot <= SLOT_BOTTLE_4) {
-                int bottleIndex = inventorySlot - SLOT_BOTTLE_1;
-                sBottles[bottleIndex].equippedButton = buttonIndex;
-            }
-        }
-    });
-    
-    // Hook to update bottle contents when bottle is used/changed
-     COND_HOOK(OnPlayerBottleUpdate, CVAR_VISIBLEEQUIPMENT_SET, [](int16_t contents) {
-        // Update all bottle items from inventory
-        for (int i = 0; i < 4; i++) {
-            u8 newItemId = gSaveContext.inventory.items[SLOT_BOTTLE_1 + i];
-            if (sBottles[i].itemId != newItemId) {
-                sBottles[i].itemId = newItemId;
-            }
-        }
-    });
-    
-    // Hook to reload bottles when purchasing potions/bottle items
-    COND_HOOK(OnSaleEnd, CVAR_VISIBLEEQUIPMENT_SET, [](GetItemEntry itemEntry) {
-        // Reload all bottle contents from inventory after any purchase
-        // (in randomizer, any item could potentially be a bottle)
-        for (int i = 0; i < 4; i++) {
-            u8 newItemId = gSaveContext.inventory.items[SLOT_BOTTLE_1 + i];
-            if (sBottles[i].itemId != newItemId) {
-                sBottles[i].itemId = newItemId;
-            }
-        }
-    });
-    
-    // Hook to track when bottles are equipped to buttons
-    COND_HOOK(OnItemEquip, CVAR_VISIBLEEQUIPMENT_SET, [](int16_t buttonIndex, int16_t inventorySlot, uint16_t itemId) {
-        // Check if a bottle was previously equipped to this button, and unequip it
-        for (int i = 0; i < 4; i++) {
-            if (sBottles[i].equippedButton == buttonIndex) {
-                sBottles[i].equippedButton = -1;
-                break;
-            }
-        }
-        
-        // Check if this is a bottle item
-        bool isBottle = (itemId >= ITEM_BOTTLE && itemId <= ITEM_LETTER_RUTO) ||
-                        (itemId >= ITEM_POTION_RED && itemId <= ITEM_FAIRY);
-        
-        if (isBottle && inventorySlot >= SLOT_BOTTLE_1 && inventorySlot <= SLOT_BOTTLE_4) {
-            int bottleIndex = inventorySlot - SLOT_BOTTLE_1;
-            sBottles[bottleIndex].equippedButton = buttonIndex;
-        }
-    });
+    // Position and rotation data for each bottle slot
+    static const struct {
+        s16 rotY;
+        f32 transX, transY, transZ;
+    } bottlePositions[4] = {
+        { 9331, 248.5f, -93.2f, 1118.0f },  // Bottle 1
+        { 8548, 310.5f, 93.2f, 745.0f },     // Bottle 2
+        { 6919, 403.7f, 186.3f, 312.6f },    // Bottle 3
+        { 4774, 430.5f, 165.5f, -198.7f }    // Bottle 4
+    };
     
     COND_ID_HOOK(OnPlayerPostLimbDraw, PLAYER_LIMB_TORSO, CVAR_VISIBLEEQUIPMENT_SET, [](Player* player, s32 limbIndex) {
         if (!GameInteractor::IsSaveLoaded()) {
@@ -141,6 +41,18 @@ void RegisterBottleOnWaist() {
 
         PlayState* play = gPlayState;
         OPEN_DISPS(play->state.gfxCtx);
+
+        // Determine which bottle slot is currently in use (if any)
+        s8 activeBottleSlot = -1;
+        if (player->itemAction >= PLAYER_IA_BOTTLE && player->itemAction <= PLAYER_IA_BOTTLE_FAIRY) {
+            s8 buttonPressed = player->heldItemButton;
+            if (buttonPressed > 0 && buttonPressed < 8) {
+                u8 inventorySlot = gSaveContext.equips.cButtonSlots[buttonPressed - 1];
+                if (inventorySlot >= SLOT_BOTTLE_1 && inventorySlot <= SLOT_BOTTLE_4) {
+                    activeBottleSlot = inventorySlot - SLOT_BOTTLE_1;
+                }
+            }
+        }
 
         // Helper function to get bottle action param from item ID
         auto getBottleActionParam = [](u8 bottleItem) -> s32 {
@@ -162,72 +74,34 @@ void RegisterBottleOnWaist() {
             }
         };
 
-        // Bottle 1
-        u8 bottle1Item = sBottles[0].itemId;
-        if (bottle1Item != ITEM_NONE && sActiveBottleSlot != 0) {
-            s32 actionParam = getBottleActionParam(bottle1Item);
-            if (actionParam >= 0) {
-                Color_RGB8* bottleColor = &sBottleColors[actionParam];
-                Matrix_Push();
-                Matrix_RotateZYX(0, 9331, 0, MTXMODE_APPLY);
-                Matrix_Translate(248.5f, -93.2f, 1118.0f, MTXMODE_APPLY);
-                Matrix_Scale(0.5f, 0.5f, 0.5f, MTXMODE_APPLY);
-                gSPMatrix(POLY_OPA_DISP++, MATRIX_NEWMTX(play->state.gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
-                gDPSetEnvColor(POLY_OPA_DISP++, bottleColor->r, bottleColor->g, bottleColor->b, 255);
-                gSPDisplayList(POLY_OPA_DISP++, ResourceMgr_LoadGfxByName(gLinkAdultBottleDL));
-                Matrix_Pop();
+        // Draw each bottle from inventory if it's not currently being used
+        for (int i = 0; i < 4; i++) {
+            if (activeBottleSlot == i) {
+                continue; // Skip the bottle currently in use
             }
-        }
-
-        // Bottle 2
-        u8 bottle2Item = sBottles[1].itemId;
-        if (bottle2Item != ITEM_NONE && sActiveBottleSlot != 1) {
-            s32 actionParam = getBottleActionParam(bottle2Item);
-            if (actionParam >= 0) {
-                Color_RGB8* bottleColor = &sBottleColors[actionParam];
-                Matrix_Push();
-                Matrix_RotateZYX(0, 8548, 0, MTXMODE_APPLY);
-                Matrix_Translate(310.5f, 93.2f, 745.0f, MTXMODE_APPLY);
-                Matrix_Scale(0.5f, 0.5f, 0.5f, MTXMODE_APPLY);
-                gSPMatrix(POLY_OPA_DISP++, MATRIX_NEWMTX(play->state.gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
-                gDPSetEnvColor(POLY_OPA_DISP++, bottleColor->r, bottleColor->g, bottleColor->b, 255);
-                gSPDisplayList(POLY_OPA_DISP++, ResourceMgr_LoadGfxByName(gLinkAdultBottleDL));
-                Matrix_Pop();
+            
+            u8 bottleItem = gSaveContext.inventory.items[SLOT_BOTTLE_1 + i];
+            if (bottleItem == ITEM_NONE) {
+                continue; // No bottle in this slot
             }
-        }
-
-        // Bottle 3
-        u8 bottle3Item = sBottles[2].itemId;
-        if (bottle3Item != ITEM_NONE && sActiveBottleSlot != 2) {
-            s32 actionParam = getBottleActionParam(bottle3Item);
-            if (actionParam >= 0) {
-                Color_RGB8* bottleColor = &sBottleColors[actionParam];
-                Matrix_Push();
-                Matrix_RotateZYX(0, 6919, 0, MTXMODE_APPLY);
-                Matrix_Translate(403.7f, 186.3f, 312.6f, MTXMODE_APPLY);
-                Matrix_Scale(0.5f, 0.5f, 0.5f, MTXMODE_APPLY);
-                gSPMatrix(POLY_OPA_DISP++, MATRIX_NEWMTX(play->state.gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
-                gDPSetEnvColor(POLY_OPA_DISP++, bottleColor->r, bottleColor->g, bottleColor->b, 255);
-                gSPDisplayList(POLY_OPA_DISP++, ResourceMgr_LoadGfxByName(gLinkAdultBottleDL));
-                Matrix_Pop();
+            
+            s32 actionParam = getBottleActionParam(bottleItem);
+            if (actionParam < 0) {
+                continue; // Invalid bottle type
             }
-        }
-
-        // Bottle 4
-        u8 bottle4Item = sBottles[3].itemId;
-        if (bottle4Item != ITEM_NONE && sActiveBottleSlot != 3) {
-            s32 actionParam = getBottleActionParam(bottle4Item);
-            if (actionParam >= 0) {
-                Color_RGB8* bottleColor = &sBottleColors[actionParam];
-                Matrix_Push();
-                Matrix_RotateZYX(0, 4774, 0, MTXMODE_APPLY);
-                Matrix_Translate(430.5f, 165.5f, -198.7f, MTXMODE_APPLY);
-                Matrix_Scale(0.5f, 0.5f, 0.5f, MTXMODE_APPLY);
-                gSPMatrix(POLY_OPA_DISP++, MATRIX_NEWMTX(play->state.gfxCtx), G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
-                gDPSetEnvColor(POLY_OPA_DISP++, bottleColor->r, bottleColor->g, bottleColor->b, 255);
-                gSPDisplayList(POLY_OPA_DISP++, ResourceMgr_LoadGfxByName(gLinkAdultBottleDL));
-                Matrix_Pop();
-            }
+            
+            Color_RGB8* bottleColor = &sBottleColors[actionParam];
+            
+            Matrix_Push();
+            Matrix_RotateZYX(0, bottlePositions[i].rotY, 0, MTXMODE_APPLY);
+            Matrix_Translate(bottlePositions[i].transX, bottlePositions[i].transY, 
+                           bottlePositions[i].transZ, MTXMODE_APPLY);
+            Matrix_Scale(0.5f, 0.5f, 0.5f, MTXMODE_APPLY);
+            gSPMatrix(POLY_OPA_DISP++, MATRIX_NEWMTX(play->state.gfxCtx), 
+                     G_MTX_NOPUSH | G_MTX_LOAD | G_MTX_MODELVIEW);
+            gDPSetEnvColor(POLY_OPA_DISP++, bottleColor->r, bottleColor->g, bottleColor->b, 255);
+            gSPDisplayList(POLY_OPA_DISP++, ResourceMgr_LoadGfxByName(gLinkAdultBottleDL));
+            Matrix_Pop();
         }
 
         CLOSE_DISPS(play->state.gfxCtx);
