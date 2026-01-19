@@ -13,7 +13,7 @@
 #include <string>
 #include <libultraship/bridge.h>
 #include <libultraship/libultraship.h>
-#include "soh_assets.h"
+#include <soh_assets.h>
 
 extern "C" {
 #include <z64.h>
@@ -22,10 +22,6 @@ extern "C" {
 #include "macros.h"
 #include "soh/cvar_prefixes.h"
 extern PlayState* gPlayState;
-
-#include "textures/icon_item_static/icon_item_static.h"
-#include "textures/icon_item_24_static/icon_item_24_static.h"
-#include "textures/parameter_static/parameter_static.h"
 }
 
 #include "message_data_static.h"
@@ -71,6 +67,7 @@ IntSliderOptions intSliderOptionsBase;
 ButtonOptions buttonOptionsBase;
 CheckboxOptions checkboxOptionsBase;
 ComboboxOptions comboboxOptionsBase;
+static std::map<std::string, ImGuiTextFilter> flagTableFilters;
 
 // Modification of gAmmoItems that replaces ITEM_NONE with the item in inventory slot it represents
 u8 gAllAmmoItems[] = {
@@ -156,7 +153,7 @@ std::string decodeNTSCPlayerNameChar(int code) {
 
 enum MagicLevel { MAGIC_LEVEL_NONE, MAGIC_LEVEL_SINGLE, MAGIC_LEVEL_DOUBLE };
 
-std::unordered_map<int8_t, const char*> magicLevelMap = {
+std::map<int8_t, const char*> magicLevelMap = {
     { MAGIC_LEVEL_NONE, "None" },
     { MAGIC_LEVEL_SINGLE, "Single" },
     { MAGIC_LEVEL_DOUBLE, "Double" },
@@ -169,7 +166,7 @@ enum AudioOutput {
     AUDIO_SURROUND,
 };
 
-std::unordered_map<uint8_t, const char*> audioMap = {
+std::map<uint8_t, const char*> audioMap = {
     { AUDIO_STEREO, "Stereo" },
     { AUDIO_MONO, "Mono" },
     { AUDIO_HEADSET, "Headset" },
@@ -181,24 +178,24 @@ enum ZTarget {
     Z_TARGET_HOLD,
 };
 
-std::unordered_map<uint8_t, const char*> zTargetMap = {
+std::map<uint8_t, const char*> zTargetMap = {
     { Z_TARGET_SWITCH, "Switch" },
     { Z_TARGET_HOLD, "Hold" },
 };
 
-std::unordered_map<int32_t, const char*> fileNumMap = {
+std::map<int32_t, const char*> fileNumMap = {
     { 0, "File 1" },
     { 1, "File 2" },
     { 2, "File 3" },
 };
 
-std::unordered_map<uint8_t, const char*> filenameLanguageMap = {
+std::map<uint8_t, const char*> filenameLanguageMap = {
     { NAME_LANGUAGE_PAL, "PAL" },
     { NAME_LANGUAGE_NTSC_JPN, "NTSC JPN" },
     { NAME_LANGUAGE_NTSC_ENG, "NTSC ENG" },
 };
 
-std::unordered_map<uint8_t, const char*> filenameLanguageMapNTSCOnly = {
+std::map<uint8_t, const char*> filenameLanguageMapNTSCOnly = {
     { NAME_LANGUAGE_NTSC_JPN, "NTSC JPN" },
     { NAME_LANGUAGE_NTSC_ENG, "NTSC ENG" },
 };
@@ -545,7 +542,16 @@ void DrawInventoryTab() {
 
             uint8_t item = gSaveContext.inventory.items[index];
             PushStyleButton(Colors::DarkGray);
-            if (item != ITEM_NONE) {
+            if (item == ITEM_ROCS_FEATHER) {
+                auto ret = ImGui::ImageButton(
+                    "ROCS_FEATHER",
+                    Ship::Context::GetInstance()->GetWindow()->GetGui()->GetTextureByName("ROCS_FEATHER"),
+                    ImVec2(48.0f, 48.0f), ImVec2(0, 0), ImVec2(1, 1));
+                if (ret) {
+                    selectedIndex = index;
+                    ImGui::OpenPopup(itemPopupPicker);
+                }
+            } else if (item != ITEM_NONE) {
                 const ItemMapEntry& slotEntry = itemMapping.find(item)->second;
                 auto ret = ImGui::ImageButton(
                     slotEntry.name.c_str(),
@@ -592,7 +598,7 @@ void DrawInventoryTab() {
                     }
                 }
 
-                for (int32_t pickerIndex = 0; pickerIndex < possibleItems.size(); pickerIndex++) {
+                for (size_t pickerIndex = 0; pickerIndex < possibleItems.size(); pickerIndex++) {
                     if (((pickerIndex + 1) % 8) != 0) {
                         ImGui::SameLine();
                     }
@@ -691,7 +697,77 @@ void DrawFlagTableArray16(const FlagTable& flagTable, uint16_t row, uint16_t& fl
         }
         ImGui::PopID();
     }
+
     ImGui::PopID();
+}
+
+static uint16_t& GetFlagTableEntry(const FlagTable& flagTable, size_t row) {
+    switch (flagTable.flagTableType) {
+        case EVENT_CHECK_INF:
+            return gSaveContext.eventChkInf[row];
+        case ITEM_GET_INF:
+            return gSaveContext.itemGetInf[row];
+        case INF_TABLE:
+            return gSaveContext.infTable[row];
+        case EVENT_INF:
+            return gSaveContext.eventInf[row];
+        case RANDOMIZER_INF:
+            return gSaveContext.ship.randomizerInf[row];
+        default: // Shouldn't be hit
+            assert(false);
+            return gSaveContext.eventChkInf[row];
+    }
+}
+
+static void DrawFlagTableSearchResults(const FlagTable& flagTable, ImGuiTextFilter& filter) {
+    bool hasMatches = false;
+
+    for (size_t row = 0; row < flagTable.size + 1; row++) {
+        uint16_t& flags = GetFlagTableEntry(flagTable, row);
+
+        for (int32_t flagIndex = 15; flagIndex >= 0; flagIndex--) {
+            uint16_t index = row * 16 + flagIndex;
+            auto descIt = flagTable.flagDescriptions.find(index);
+            const char* desc = descIt != flagTable.flagDescriptions.end() ? descIt->second : "";
+            std::string searchable = fmt::format("0x{:02X} {}", index, desc);
+            if (!filter.PassFilter(searchable.c_str())) {
+                continue;
+            }
+
+            hasMatches = true;
+
+            ImGui::PushID(index);
+            bool hasDescription = descIt != flagTable.flagDescriptions.end();
+            uint32_t bitMask = 1 << flagIndex;
+            ImVec4 themeColor = ColorValues.at(THEME_COLOR);
+            ImVec4 colorDark = { themeColor.x * 0.4f, themeColor.y * 0.4f, themeColor.z * 0.4f, themeColor.z };
+            PushStyleCheckbox(hasDescription ? themeColor : colorDark);
+            ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4.0f, 3.0f));
+            bool flag = (flags & bitMask) != 0;
+            if (ImGui::Checkbox("##check", &flag)) {
+                if (flag) {
+                    flags |= bitMask;
+                } else {
+                    flags &= ~bitMask;
+                }
+            }
+            ImGui::PopStyleVar();
+            PopStyleCheckbox();
+
+            ImGui::SameLine();
+            if (hasDescription) {
+                ImGui::TextWrapped("0x%02X: %s", index, desc);
+            } else {
+                ImGui::Text("0x%02X", index);
+            }
+
+            ImGui::PopID();
+        }
+    }
+
+    if (!hasMatches) {
+        ImGui::Text("No flags match the current search.");
+    }
 }
 
 void DrawFlagsTab() {
@@ -1034,44 +1110,54 @@ void DrawFlagsTab() {
         },
         "Gold Skulltulas");
 
-    for (int i = 0; i < flagTables.size(); i++) {
+    for (size_t i = 0; i < flagTables.size(); i++) {
         const FlagTable& flagTable = flagTables[i];
         if (flagTable.flagTableType == RANDOMIZER_INF && !IS_RANDO && !IS_BOSS_RUSH) {
             continue;
         }
 
         if (ImGui::TreeNode(flagTable.name)) {
-            for (int j = 0; j < flagTable.size + 1; j++) {
-                DrawGroupWithBorder(
-                    [&]() {
-                        if (j == 0) {
-                            for (int k = 0xF; k >= 0; k--) {
-                                ImGui::SameLine(37.5 + ((0xF - k) * 33.8));
-                                ImGui::Text("%X", k);
+            ImGui::PushID(flagTable.name);
+            ImGuiTextFilter& flagFilter = flagTableFilters[flagTable.name];
+            ImGui::SetNextItemWidth(ImGui::GetFontSize() * 16);
+            flagFilter.Draw();
+            ImGui::Spacing();
+
+            if (!flagFilter.IsActive()) {
+                for (size_t j = 0; j < flagTable.size + 1; j++) {
+                    DrawGroupWithBorder(
+                        [&]() {
+                            if (j == 0) {
+                                for (int k = 0xF; k >= 0; k--) {
+                                    ImGui::SameLine(37.5 + ((0xF - k) * 33.8));
+                                    ImGui::Text("%X", k);
+                                }
                             }
-                        }
 
-                        ImGui::Text("%s", fmt::format("{:<2X}", j).c_str());
+                            ImGui::Text("%s", fmt::format("{:<2X}", j).c_str());
 
-                        switch (flagTable.flagTableType) {
-                            case EVENT_CHECK_INF:
-                                DrawFlagTableArray16(flagTable, j, gSaveContext.eventChkInf[j]);
-                                break;
-                            case ITEM_GET_INF:
-                                DrawFlagTableArray16(flagTable, j, gSaveContext.itemGetInf[j]);
-                                break;
-                            case INF_TABLE:
-                                DrawFlagTableArray16(flagTable, j, gSaveContext.infTable[j]);
-                                break;
-                            case EVENT_INF:
-                                DrawFlagTableArray16(flagTable, j, gSaveContext.eventInf[j]);
-                                break;
-                            case RANDOMIZER_INF:
-                                DrawFlagTableArray16(flagTable, j, gSaveContext.ship.randomizerInf[j]);
-                                break;
-                        }
-                    },
-                    flagTable.name);
+                            switch (flagTable.flagTableType) {
+                                case EVENT_CHECK_INF:
+                                    DrawFlagTableArray16(flagTable, j, gSaveContext.eventChkInf[j]);
+                                    break;
+                                case ITEM_GET_INF:
+                                    DrawFlagTableArray16(flagTable, j, gSaveContext.itemGetInf[j]);
+                                    break;
+                                case INF_TABLE:
+                                    DrawFlagTableArray16(flagTable, j, gSaveContext.infTable[j]);
+                                    break;
+                                case EVENT_INF:
+                                    DrawFlagTableArray16(flagTable, j, gSaveContext.eventInf[j]);
+                                    break;
+                                case RANDOMIZER_INF:
+                                    DrawFlagTableArray16(flagTable, j, gSaveContext.ship.randomizerInf[j]);
+                                    break;
+                            }
+                        },
+                        flagTable.name);
+                }
+            } else {
+                DrawFlagTableSearchResults(flagTable, flagFilter);
             }
 
             // make some buttons to help with fishsanity debugging
@@ -1103,6 +1189,7 @@ void DrawFlagsTab() {
                 }
             }
 
+            ImGui::PopID();
             ImGui::TreePop();
         }
     }
@@ -1116,7 +1203,7 @@ void DrawUpgrade(const std::string& categoryName, int32_t categoryId, const std:
     PushStyleCombobox(THEME_COLOR);
     ImGui::AlignTextToFramePadding();
     if (ImGui::BeginCombo("##upgrade", names[CUR_UPG_VALUE(categoryId)].c_str())) {
-        for (int32_t i = 0; i < names.size(); i++) {
+        for (size_t i = 0; i < names.size(); i++) {
             if (ImGui::Selectable(names[i].c_str())) {
                 Inventory_ChangeUpgrade(categoryId, i);
             }
@@ -1153,7 +1240,7 @@ void DrawUpgradeIcon(const std::string& categoryName, int32_t categoryId, const 
     Tooltip(categoryName.c_str());
 
     if (ImGui::BeginPopup(upgradePopupPicker)) {
-        for (int32_t pickerIndex = 0; pickerIndex < items.size(); pickerIndex++) {
+        for (size_t pickerIndex = 0; pickerIndex < items.size(); pickerIndex++) {
             if ((pickerIndex % 8) != 0) {
                 ImGui::SameLine();
             }
@@ -1192,7 +1279,7 @@ void DrawEquipmentTab() {
         ITEM_TUNIC_KOKIRI, ITEM_TUNIC_GORON,   ITEM_TUNIC_ZORA,    ITEM_NONE,
         ITEM_BOOTS_KOKIRI, ITEM_BOOTS_IRON,    ITEM_BOOTS_HOVER,   ITEM_NONE,
     };
-    for (int32_t i = 0; i < equipmentValues.size(); i++) {
+    for (size_t i = 0; i < equipmentValues.size(); i++) {
         // Skip over unused 4th slots for shields, boots, and tunics
         if (equipmentValues[i] == ITEM_NONE) {
             continue;
@@ -1848,4 +1935,6 @@ void SaveEditorWindow::DrawElement() {
 }
 
 void SaveEditorWindow::InitElement() {
+    Ship::Context::GetInstance()->GetWindow()->GetGui()->LoadGuiTexture("ROCS_FEATHER", gRocsFeatherTex,
+                                                                        ImVec4(1, 1, 1, 1));
 }

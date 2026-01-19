@@ -13,6 +13,7 @@
 #include "soh/SohGui/SohMenu.h"
 #include "soh/SohGui/SohGui.hpp"
 #include "AudioCollection.h"
+#include "soh/Enhancements/enhancementTypes.h"
 #include "soh/Enhancements/game-interactor/GameInteractor.h"
 
 extern "C" {
@@ -78,7 +79,7 @@ size_t AuthenticCountBySequenceType(SeqType type) {
     }
 }
 
-static const std::unordered_map<int32_t, const char*> audioRandomizerModes = {
+static const std::map<int32_t, const char*> audioRandomizerModes = {
     { RANDOMIZE_OFF, "Manual" },
     { RANDOMIZE_ON_NEW_SCENE, "On New Scene" },
     { RANDOMIZE_ON_RANDO_GEN_ONLY, "On Rando Gen Only" },
@@ -108,6 +109,8 @@ void UpdateCurrentBGM(u16 seqKey, SeqType seqType) {
     }
 }
 
+static uint64_t seeded_audio_state = 0;
+
 void RandomizeGroup(SeqType type, bool manual = true) {
     std::vector<u16> values;
 
@@ -117,7 +120,7 @@ void RandomizeGroup(SeqType type, bool manual = true) {
 
             uint32_t finalSeed = type + (IS_RANDO ? Rando::Context::GetInstance()->GetSeed()
                                                   : static_cast<uint32_t>(gSaveContext.ship.stats.fileCreatedAt));
-            Random_Init(finalSeed);
+            ShipUtils::RandInit(finalSeed, &seeded_audio_state);
         }
     }
 
@@ -138,7 +141,7 @@ void RandomizeGroup(SeqType type, bool manual = true) {
         if (!values.size())
             return;
     }
-    Shuffle(values);
+    ShipUtils::Shuffle(values, &seeded_audio_state);
     for (const auto& [seqId, seqData] : AudioCollection::Instance->GetAllSequences()) {
         const std::string cvarKey = AudioCollection::Instance->GetCvarKey(seqData.sfxKey);
         const std::string cvarLockKey = AudioCollection::Instance->GetCvarLockKey(seqData.sfxKey);

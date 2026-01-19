@@ -1,10 +1,17 @@
 ﻿#include "SohMenu.h"
+#include <soh/Enhancements/enhancementTypes.h>
 #include <soh/Enhancements/mods.h>
 #include <soh/Enhancements/game-interactor/GameInteractor.h>
 #include <soh/OTRGlobals.h>
 #include <soh/Enhancements/cosmetics/authenticGfxPatches.h>
 #include <soh/Enhancements/enemyrandomizer.h>
 #include <soh/Enhancements/TimeDisplay/TimeDisplay.h>
+
+extern "C" {
+#include "functions.h"
+#include "variables.h"
+extern PlayState* gPlayState;
+}
 
 #define CVAR_INT_SHIP_INIT(cvar, val) \
     CVarSetInteger(cvar, val);        \
@@ -27,26 +34,26 @@ namespace SohGui {
 extern std::shared_ptr<SohMenu> mSohMenu;
 using namespace UIWidgets;
 
-static std::unordered_map<int32_t, const char*> bunnyHoodEffectMap = {
+static std::map<int32_t, const char*> bunnyHoodEffectMap = {
     { BUNNY_HOOD_VANILLA, "Vanilla" },
     { BUNNY_HOOD_FAST, "Faster Run" },
     { BUNNY_HOOD_FAST_AND_JUMP, "Faster + Longer Jump" },
 };
 
-static const std::unordered_map<int32_t, const char*> dekuStickCheat = {
+static const std::map<int32_t, const char*> dekuStickCheat = {
     { DEKU_STICK_NORMAL, "Normal" },
     { DEKU_STICK_UNBREAKABLE, "Unbreakable" },
     { DEKU_STICK_UNBREAKABLE_AND_ALWAYS_ON_FIRE, "Unbreakable + Always on Fire" },
 };
 
-static const std::unordered_map<int32_t, const char*> skipForcedDialogOptions = {
+static const std::map<int32_t, const char*> skipForcedDialogOptions = {
     { FORCED_DIALOG_SKIP_NONE, "None" },
     { FORCED_DIALOG_SKIP_NAVI, "Navi" },
     { FORCED_DIALOG_SKIP_NPC, "NPCs" },
     { FORCED_DIALOG_SKIP_ALL, "All" },
 };
 
-static const std::unordered_map<int32_t, const char*> timeTravelOptions = {
+static const std::map<int32_t, const char*> timeTravelOptions = {
     { TIME_TRAVEL_DISABLED, "Disabled" },
     { TIME_TRAVEL_OOT, "Ocarina of Time" },
     { TIME_TRAVEL_OOT_MS, "Ocarina of Time + Master Sword" },
@@ -54,13 +61,13 @@ static const std::unordered_map<int32_t, const char*> timeTravelOptions = {
     { TIME_TRAVEL_ANY_MS, "Any Ocarina + Master Sword" },
 };
 
-static const std::unordered_map<int32_t, const char*> sleepingWaterfallOptions = {
+static const std::map<int32_t, const char*> sleepingWaterfallOptions = {
     { WATERFALL_ALWAYS, "Always" },
     { WATERFALL_ONCE, "Once" },
     { WATERFALL_NEVER, "Never" },
 };
 
-static const std::unordered_map<int32_t, const char*> allPowers = {
+static const std::map<int32_t, const char*> allPowers = {
     { DAMAGE_VANILLA, "Vanilla (1x)" },      { DAMAGE_DOUBLE, "Double (2x)" },
     { DAMAGE_QUADRUPLE, "Quadruple (4x)" },  { DAMAGE_OCTUPLE, "Octuple (8x)" },
     { DAMAGE_FOOLISH, "Foolish (16x)" },     { DAMAGE_RIDICULOUS, "Ridiculous (32x)" },
@@ -68,28 +75,28 @@ static const std::unordered_map<int32_t, const char*> allPowers = {
     { DAMAGE_OHKO, "OHKO (256x)" },
 };
 
-static const std::unordered_map<int32_t, const char*> subPowers = {
+static const std::map<int32_t, const char*> subPowers = {
     { DAMAGE_VANILLA, "Vanilla (1x)" },      { DAMAGE_DOUBLE, "Double (2x)" },
     { DAMAGE_QUADRUPLE, "Quadruple (4x)" },  { DAMAGE_OCTUPLE, "Octuple (8x)" },
     { DAMAGE_FOOLISH, "Foolish (16x)" },     { DAMAGE_RIDICULOUS, "Ridiculous (32x)" },
     { DAMAGE_MERCILESS, "Merciless (64x)" }, { DAMAGE_TORTURE, "Pure Torture (128x)" },
 };
 
-static const std::unordered_map<int32_t, const char*> subSubPowers = {
+static const std::map<int32_t, const char*> subSubPowers = {
     { DAMAGE_VANILLA, "Vanilla (1x)" },      { DAMAGE_DOUBLE, "Double (2x)" },
     { DAMAGE_QUADRUPLE, "Quadruple (4x)" },  { DAMAGE_OCTUPLE, "Octuple (8x)" },
     { DAMAGE_FOOLISH, "Foolish (16x)" },     { DAMAGE_RIDICULOUS, "Ridiculous (32x)" },
     { DAMAGE_MERCILESS, "Merciless (64x)" },
 };
 
-static const std::unordered_map<int32_t, const char*> bonkDamageValues = {
+static const std::map<int32_t, const char*> bonkDamageValues = {
     { BONK_DAMAGE_NONE, "No Damage" },        { BONK_DAMAGE_QUARTER_HEART, "0.25 Hearts" },
     { BONK_DAMAGE_HALF_HEART, "0.5 Hearts" }, { BONK_DAMAGE_1_HEART, "1 Heart" },
     { BONK_DAMAGE_2_HEARTS, "2 Hearts" },     { BONK_DAMAGE_4_HEARTS, "4 Hearts" },
     { BONK_DAMAGE_8_HEARTS, "8 Hearts" },     { BONK_DAMAGE_OHKO, "OHKO" },
 };
 
-static const std::unordered_map<int32_t, const char*> dampeDropRates = {
+static const std::map<int32_t, const char*> dampeDropRates = {
     { DAMPE_NONE, "None" },
     { DAMPE_NORMAL, "Vanilla" },
     { DAMPE_JALAPENO, "Jalapeño" },
@@ -99,25 +106,25 @@ static const std::unordered_map<int32_t, const char*> dampeDropRates = {
     { DAMPE_INFERNO, "Dampe's Inferno" },
 };
 
-static const std::unordered_map<int32_t, const char*> cursorAnywhereValues = {
+static const std::map<int32_t, const char*> cursorAnywhereValues = {
     { PAUSE_ANY_CURSOR_RANDO_ONLY, "Only in Rando" },
     { PAUSE_ANY_CURSOR_ALWAYS_ON, "Always" },
     { PAUSE_ANY_CURSOR_ALWAYS_OFF, "Never" },
 };
 
-static const std::unordered_map<int32_t, const char*> zFightingOptions = {
+static const std::map<int32_t, const char*> zFightingOptions = {
     { ZFIGHT_FIX_DISABLED, "Disabled" },
     { ZFIGHT_FIX_CONSISTENT_VANISH, "Consistent Vanish" },
     { ZFIGHT_FIX_NO_VANISH, "No Vanish" },
 };
 
-static const std::unordered_map<int32_t, const char*> swordToggleModes = {
+static const std::map<int32_t, const char*> swordToggleModes = {
     { SWORD_TOGGLE_NONE, "None" },
     { SWORD_TOGGLE_CHILD, "Child Toggle" },
     { SWORD_TOGGLE_BOTH_AGES, "Both Ages" },
 };
 
-static const std::unordered_map<int32_t, const char*> mirroredWorldModes = {
+static const std::map<int32_t, const char*> mirroredWorldModes = {
     { MIRRORED_WORLD_OFF, "Disabled" },
     { MIRRORED_WORLD_ALWAYS, "Always" },
     { MIRRORED_WORLD_RANDOM, "Random" },
@@ -129,7 +136,7 @@ static const std::unordered_map<int32_t, const char*> mirroredWorldModes = {
     { MIRRORED_WORLD_DUNGEONS_RANDOM_SEEDED, "Dungeons Random (Seeded)" },
 };
 
-static const std::unordered_map<int32_t, const char*> enemyRandomizerModes = {
+static const std::map<int32_t, const char*> enemyRandomizerModes = {
     { ENEMY_RANDOMIZER_OFF, "Disabled" },
     { ENEMY_RANDOMIZER_RANDOM, "Random" },
     { ENEMY_RANDOMIZER_RANDOM_SEEDED, "Random (Seeded)" },
@@ -538,6 +545,11 @@ void SohMenu::AddMenuEnhancements() {
         .Options(CheckboxOptions().Tooltip(
             "Disables Grottos rotating with the Camera. To be used in conjuction with mods that want to "
             "replace grottos with 3D objects."));
+    AddWidget(path, "Disable Link's Sword Trail", WIDGET_CVAR_CHECKBOX)
+        .CVar(CVAR_ENHANCEMENT("DisableLinkSwordTrail"))
+        .RaceDisable(false)
+        .Options(CheckboxOptions().Tooltip("Disables the sword trail effect when swinging Link's sword. Useful when "
+                                           "using mods that replace Link's sword model."));
     AddWidget(path, "Disable 2D Pre-Rendered Scenes", WIDGET_CVAR_CHECKBOX)
         .CVar(CVAR_ENHANCEMENT("3DSceneRender"))
         .RaceDisable(false)
@@ -683,6 +695,10 @@ void SohMenu::AddMenuEnhancements() {
         .CVar(CVAR_ENHANCEMENT("RemoveSpinAttackDarkness"))
         .RaceDisable(false)
         .Options(CheckboxOptions().Tooltip("Remove the Darkness that appears when charging a Spin Attack."));
+    AddWidget(path, "Disable Link Spinning With Goron Pot", WIDGET_CVAR_CHECKBOX)
+        .CVar(CVAR_ENHANCEMENT("DisableLinkSpinWithGoronPot"))
+        .RaceDisable(false)
+        .Options(CheckboxOptions().Tooltip("Link will not spin when the Goron Pot starts to spin."));
     AddWidget(path, "Draw Distance", WIDGET_SEPARATOR_TEXT).RaceDisable(false);
     AddWidget(path, "Increase Actor Draw Distance: %dx", WIDGET_CVAR_SLIDER_INT)
         .CVar(CVAR_ENHANCEMENT("DisableDrawDistance"))
@@ -833,6 +849,12 @@ void SohMenu::AddMenuEnhancements() {
 
     path.column = SECTION_COLUMN_2;
     AddWidget(path, "Explosives", WIDGET_SEPARATOR_TEXT);
+    AddWidget(path, "Remote Bombchu", WIDGET_CVAR_CHECKBOX)
+        .CVar(CVAR_ENHANCEMENT("RemoteBombchu"))
+        .Options(CheckboxOptions().Tooltip("Allows you to control a Bombchu after dropping it.\n"
+                                           "Control Stick: Steer\n"
+                                           "B: Detonate\n"
+                                           "A: Quit Control"));
     AddWidget(path, "Deku Nuts Explode Bombs", WIDGET_CVAR_CHECKBOX)
         .CVar(CVAR_ENHANCEMENT("NutsExplodeBombs"))
         .Options(CheckboxOptions().Tooltip("Make Deku Nuts explode Bombs, similar to how they interact with Bombchus. "
@@ -897,6 +919,12 @@ void SohMenu::AddMenuEnhancements() {
         .CVar(CVAR_ENHANCEMENT("BowReticle"))
         .Options(CheckboxOptions().Tooltip("Aiming with a Bow or Slingshot will display a reticle as with the Hookshot "
                                            "when the projectile is ready to fire."));
+    AddWidget(path, "Arrow Cycle", WIDGET_CVAR_CHECKBOX)
+        .CVar(CVAR_ENHANCEMENT("BowArrowCycle"))
+        .Options(CheckboxOptions().Tooltip(
+            "Allows cycling between different arrow types (Normal, Fire, Ice, Light) while aiming the bow. "
+            "Press the R button to cycle to the next available arrow type. "
+            "Only works when aiming and only cycles to arrow types you own with sufficient magic."));
 
     path.column = SECTION_COLUMN_3;
     AddWidget(path, "Hookshot", WIDGET_SEPARATOR_TEXT);
@@ -991,6 +1019,11 @@ void SohMenu::AddMenuEnhancements() {
         .CVar(CVAR_ENHANCEMENT("AnubisFix"))
         .Options(CheckboxOptions().Tooltip(
             "Make Anubis Fireballs do Fire damage when reflected back at them with the Mirror Shield."));
+    AddWidget(path, "Fix Goron City Doors After Fire Temple", WIDGET_CVAR_CHECKBOX)
+        .CVar(CVAR_ENHANCEMENT("GCDoorsAfterFireFix"))
+        .Options(CheckboxOptions().Tooltip(
+            "Forces Goron City doors open if you somehow complete Fire Temple without talking to Goron Link "
+            " and receiving the Goron Tunic."));
 
     AddWidget(path, "Item-related Fixes", WIDGET_SEPARATOR_TEXT);
     AddWidget(path, "Fix Deku Nut Upgrade", WIDGET_CVAR_CHECKBOX)
@@ -1525,6 +1558,11 @@ void SohMenu::AddMenuEnhancements() {
     AddSidebarEntry("Enhancements", path.sidebarName, 3);
     path.column = SECTION_COLUMN_1;
 
+    AddWidget(path, "Bounce off Walls", WIDGET_CVAR_CHECKBOX)
+        .CVar(CVAR_ENHANCEMENT("BounceOffWalls"))
+        .Options(
+            CheckboxOptions().Tooltip("Allows Link to bounce off walls when linear velocity is high enough, this is "
+                                      "relevant when frequently being knocked back by traps, CC, or in Anchor."));
     AddWidget(path, "Mirrored World", WIDGET_CVAR_COMBOBOX)
         .CVar(CVAR_ENHANCEMENT("MirroredWorldMode"))
         .Options(
@@ -1737,6 +1775,9 @@ void SohMenu::AddMenuEnhancements() {
     AddWidget(path, "Disable Haunted Wasteland Sandstorm", WIDGET_CVAR_CHECKBOX)
         .CVar(CVAR_CHEAT("DisableSandstorm"))
         .Options(CheckboxOptions().Tooltip("Disables sandstorm effect in Haunted Wasteland."));
+    AddWidget(path, "Targetable Gold Skulltula", WIDGET_CVAR_CHECKBOX)
+        .CVar(CVAR_CHEAT("GSTargetable"))
+        .Options(CheckboxOptions().Tooltip("Allows Z-Targeting Gold Skulltulas."));
 
     AddWidget(path, "Glitch Aids", WIDGET_SEPARATOR_TEXT);
     AddWidget(path, "Easy Frame Advancing with Pause", WIDGET_CVAR_CHECKBOX)
