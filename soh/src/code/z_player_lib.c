@@ -1850,6 +1850,8 @@ void Player_PostLimbDrawGameplay(PlayState* play, s32 limbIndex, Gfx** dList, Ve
             gSPDisplayList(POLY_XLU_DISP++, sBottleDLists[(gSaveContext.linkAge)]);
 
             CLOSE_DISPS(play->state.gfxCtx);
+
+            GameInteractor_ExecuteOnBottleDraw();
         }
 
         if (this->actor.scale.y >= 0.0f) {

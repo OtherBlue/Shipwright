@@ -106,6 +106,10 @@ void GameInteractor_ExecuteOnPlayerBottleHeldChanged(s32 item, s32 actionParam) 
     GameInteractor::Instance->ExecuteHooks<GameInteractor::OnPlayerBottleHeldChanged>(item, actionParam);
 }
 
+void GameInteractor_ExecuteOnBottleDraw() {
+    GameInteractor::Instance->ExecuteHooks<GameInteractor::OnBottleDraw>();
+}
+
 void GameInteractor_ExecuteOnSetDoAction(uint16_t action) {
     GameInteractor::Instance->ExecuteHooks<GameInteractor::OnSetDoAction>(action);
 }
@@ -235,6 +239,12 @@ void GameInteractor_ExecuteOnPlayerShieldControl(float_t* sp50, float_t* sp54) {
 
 void GameInteractor_ExecuteOnPlayerProcessStick() {
     GameInteractor::Instance->ExecuteHooks<GameInteractor::OnPlayerProcessStick>();
+}
+
+void GameInteractor_ExecuteOnPlayerPostLimbDraw(Player* player, s32 limbIndex) {
+    GameInteractor::Instance->ExecuteHooks<GameInteractor::OnPlayerPostLimbDraw>(player, limbIndex);
+    GameInteractor::Instance->ExecuteHooksForID<GameInteractor::OnPlayerPostLimbDraw>(limbIndex, player, limbIndex);
+    GameInteractor::Instance->ExecuteHooksForFilter<GameInteractor::OnPlayerPostLimbDraw>(player, limbIndex);
 }
 
 void GameInteractor_ExecuteOnPlayDestroy() {

@@ -10,10 +10,20 @@
 #include "kaleido.h"
 #include "soh/cvar_prefixes.h"
 
+#include "src/overlays/actors/ovl_Object_Kankyo/z_object_kankyo.h"
+#include "assets/objects/object_gi_soul/object_gi_soul.h"
+
+extern "C" {
+#include "functions.h"
+void FrameInterpolation_RecordCloseChild(void);
+void FrameInterpolation_RecordOpenChild(const void* a, int b);
+}
+
 extern SaveContext gSaveContext;
 extern PlayState* gPlayState;
 extern void Overlay_DisplayText(float duration, const char* text);
 void DummyPlayer_Update(Actor* actor, PlayState* play);
+void DrawBottledFairy();
 
 static void UpdatePatchCustomEquipmentDlists();
 static void RefreshCustomEquipment();
@@ -88,6 +98,7 @@ static void PatchCustomEquipment() {
     COND_HOOK(OnLinkSkeletonInit, true, UpdateCustomEquipment);
     COND_HOOK(OnAssetAltChange, true, UpdateCustomEquipment);
     COND_HOOK(OnPlayerBottleHeldChanged, true, OnBottleHeldChanged);
+    COND_HOOK(OnBottleDraw, true, DrawBottledFairy);
 }
 
 static RegisterShipInitFunc initFunc(PatchCustomEquipment);
@@ -491,6 +502,9 @@ static void ResetBottlePatch() {
     sLastBottleContentIndex = -1;
 }
 
+// Forward declaration for the new fairy effect draw function
+void DrawBottleFairyEffects(PlayState* play, MtxF* bottleMtx);
+
 static void ApplyBottleContentPatches() {
     constexpr s32 BOTTLE_EMPTY = 0;
     constexpr s32 BOTTLE_MILK_FULL = PLAYER_IA_BOTTLE_MILK_FULL - PLAYER_IA_BOTTLE;
@@ -511,7 +525,7 @@ static void ApplyBottleContentPatches() {
         gCustomBottleGreenPotionDL, // 9: PLAYER_IA_BOTTLE_POTION_GREEN
         gCustomBottleMilkDL,        // 10: PLAYER_IA_BOTTLE_MILK_FULL
         gCustomBottleMilkHalfDL,    // 11: PLAYER_IA_BOTTLE_MILK_HALF
-        gCustomBottleFairyDL,       // 12: PLAYER_IA_BOTTLE_FAIRY
+        nullptr,                    // 12: PLAYER_IA_BOTTLE_FAIRY (handled by effect, not DL)
     };
 
     if (!ResourceMgr_IsAltAssetsEnabled()) {
@@ -558,18 +572,58 @@ static void ApplyBottleContentPatches() {
     const bool isChild = LINK_IS_CHILD;
     const char* bottleDL = isChild ? gLinkChildBottleDL : gLinkAdultBottleDL;
 
+    // For fairy, do not patch in a static DL, but expect the bottle rendering code to call DrawBottleFairyEffects
     const char* contentDL = bottleContentDLs[bottleIndex];
 
     if (contentDL && !ResourceMgr_FileExists(contentDL) && !ResourceGetIsCustomByName(contentDL)) {
         contentDL = nullptr;
     }
 
-    ApplyPatchEntries({
-        { bottleDL, gCustomBottleDL, "customBottle1", "customBottle2", contentDL ? "customBottle3" : nullptr,
-          contentDL },
-    });
+    // If bottle contains a fairy, patch the bottle DL only; the actual bottle rendering code should draw the fairy
+    // effect
+    if (bottleIndex == BOTTLE_FAIRY) {
+        ApplyPatchEntries({
+            { bottleDL, gCustomBottleDL, "customBottle1", "customBottle2", nullptr, nullptr },
+        });
+        // The bottle rendering code should call DrawBottleFairyEffects at the correct time/location
+    } else {
+        ApplyPatchEntries({
+            { bottleDL, gCustomBottleDL, "customBottle1", "customBottle2", contentDL ? "customBottle3" : nullptr,
+              contentDL },
+        });
+    }
 
     sLastBottleContentIndex = bottleIndex;
+}
+
+void DrawBottledFairy() {
+    if (gPlayState == nullptr) {
+        return;
+    }
+
+    Player* player = GET_PLAYER(gPlayState);
+    if (player == nullptr) {
+        return;
+    }
+
+    if (player->itemAction != PLAYER_IA_BOTTLE_FAIRY) {
+        return;
+    }
+
+    Gfx_SetupDL_25Xlu(gPlayState->state.gfxCtx);
+
+    OPEN_DISPS(gPlayState->state.gfxCtx);
+
+    Matrix_Push();
+    Matrix_Translate(0.0f, 0.0f, 0.0f, MTXMODE_APPLY);
+    Matrix_Scale(1.0f, 1.0f, 1.0f, MTXMODE_APPLY);
+    Matrix_ReplaceRotation(&gPlayState->billboardMtxF);
+    gSPMatrix(POLY_XLU_DISP++, MATRIX_NEWMTX(gPlayState->state.gfxCtx), G_MTX_MODELVIEW | G_MTX_LOAD);
+
+    gSPDisplayList(POLY_XLU_DISP++, ResourceMgr_LoadGfxByName(gCustomBottleFairyDL));
+    Matrix_Pop();
+
+    CLOSE_DISPS(gPlayState->state.gfxCtx);
 }
 
 void UpdatePatchCustomEquipmentDlists() {
