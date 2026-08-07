@@ -207,7 +207,7 @@ void EnBa_SetupFallAsBlob(EnBa* this) {
  * Action function of the pink fleshy blobs that spawn and fall to the floor when a tentacle dies
  */
 void EnBa_FallAsBlob(EnBa* this, PlayState* play) {
-    if (this->actor.bgCheckFlags & 1) {
+    if (this->actor.bgCheckFlags & BGCHECKFLAG_GROUND) {
         this->actor.scale.y -= 0.001f;
         this->actor.scale.x += 0.0005f;
         this->actor.scale.z += 0.0005f;
@@ -307,7 +307,7 @@ void EnBa_SwingAtPlayer(EnBa* this, PlayState* play) {
         if (this->collider.base.atFlags & 2) {
             this->collider.base.atFlags &= ~2;
             if (this->collider.base.at == &player->actor) {
-                func_8002F71C(play, &this->actor, 8.0f, this->actor.yawTowardsPlayer, 8.0f);
+                Actor_SetPlayerKnockbackLargeNoDamage(play, &this->actor, 8.0f, this->actor.yawTowardsPlayer, 8.0f);
             }
         }
         CollisionCheck_SetAT(play, &play->colChkCtx, &this->collider.base);
@@ -391,7 +391,7 @@ void func_809B75A0(EnBa* this, PlayState* play2) {
 
     for (i = 7; i < 14; i++) {
         Actor_Spawn(&play->actorCtx, play, ACTOR_EN_BA, this->unk_158[i].x, this->unk_158[i].y, this->unk_158[i].z, 0,
-                    0, 0, EN_BA_DEAD_BLOB, true);
+                    0, 0, EN_BA_DEAD_BLOB);
     }
     unk_temp = Math_Vec3f_Pitch(&this->actor.world.pos, &this->unk_158[0]) + 0x8000;
     Math_SmoothStepToS(&this->actor.shape.rot.y, this->actor.yawTowardsPlayer, 1, this->unk_31C, 0);

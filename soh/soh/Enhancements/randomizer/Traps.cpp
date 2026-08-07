@@ -1,8 +1,9 @@
 #include "Traps.h"
 #include "soh/Enhancements/randomizer/SeedContext.h"
-#include "soh/Enhancements/randomizer/randomizerTypes.h"
 #include "soh/Enhancements/randomizer/static_data.h"
-#include "soh/Enhancements/randomizer/3drando/random.hpp"
+#include "soh/ShipUtils.h"
+
+#include "soh/Enhancements/randomizer/rng.h"
 
 #include <vector>
 
@@ -660,10 +661,16 @@ static void InitTrickNames() {
         Text{ "Triforce Shard", "Éclat de Triforce", "Triforce-Fragment" }, // "Triforce Shard"
         Text{ "Shiny Rock", "Caillou Brillant", "glänzender Stein" },       // "Shiny Rock"
     };
+    trickNameTable[RG_TRIFORCE] = {
+        // TODO_TRANSLATE
+        Text{ "Cheese Triangle" },
+        Text{ "Triumph Fork" },
+        Text{ "Force Gem" },
+    };
     trickNameTable[RG_ROCS_FEATHER] = {
-        Text{ "Chicken Wing", "Chicken Wing", "Chicken Wing" }, // "Chicken Wing"
-        Text{ "Roc's Leg", "Roc's Leg", "Roc's Leg" },          // "Roc's Leg"
-        Text{ "Roc's Fapper", "Roc's Fapper", "Roc's Fapper" }, // "Roc's Fapper"
+        Text{ "Chicken Wing", "Chicken Wing", "Chicken Wing" },    // "Chicken Wing"
+        Text{ "Roc's Leg", "Roc's Leg", "Roc's Leg" },             // "Roc's Leg"
+        Text{ "Roc's Flapper", "Roc's Flapper", "Roc's Flapper" }, // "Roc's Flapper"
     };
     trickNameTable[RG_DEATH_MOUNTAIN_CRATER_BEAN_SOUL] = {
         // TODO_TRANSLATE
@@ -878,6 +885,13 @@ static void InitTrickNames() {
         Text{ "Vaati's Palace Small Key", "Vaati's Palace Small Key", "Vaati's Palace Small Key" },
     };
 
+    trickNameTable[RG_TREASURE_GAME_SMALL_KEY] = {
+        // TODO_TRANSALTE
+        Text{ "Chest Game Salmon Koi", "Chest Game Salmon Koi", "Chest Game Salmon Koi" },
+        Text{ "Shell Game Small Key", "Shell Game Small Key", "Shell Game Small Key" },
+        Text{ "Treasure Hunt Small Key", "Treasure Hunt Small Key", "Treasure Hunt Small Key" },
+    };
+
     trickNameTable[RG_FOREST_TEMPLE_KEY_RING] = {
         // TODO_TRANSALTE
         Text{ "Wind Temple Key Ring", "Wind Temple Key Ring", "Wind Temple Key Ring" },
@@ -934,6 +948,13 @@ static void InitTrickNames() {
         Text{ "Hyrule Castle Koi Ray", "Hyrule Castle Koi Ray", "Hyrule Castle Koi Ray" },
         Text{ "Onox's Castle Key Ring", "Onox's Castle Key Ring", "Onox's Castle Key Ring" },
         Text{ "Vaati's Palace Key Ring", "Vaati's Palace Key Ring", "Vaati's Palace Key Ring" },
+    };
+
+    trickNameTable[RG_TREASURE_GAME_KEY_RING] = {
+        // TODO_TRANSALTE
+        Text{ "Chest Game Koi Ray", "Chest Game Koi Ray", "Chest Game Koi Ray" },
+        Text{ "Shell Game Key Ring", "Shell Game Key Ring", "Shell Game Key Ring" },
+        Text{ "Treasure Hunt Key Ring", "Treasure Hunt Key Ring", "Treasure Hunt Key Ring" },
     };
 
     trickNameTable[RG_FOREST_TEMPLE_BOSS_KEY] = {
@@ -1054,7 +1075,7 @@ static void InitTrickNames() {
     trickNameTable[RG_SPEAK_HYLIAN] = {
         // TODO_TRANSLATE
         Text{ "Human Jingle Nut" },
-        Text{ "Sheikah Jabber nut" },
+        Text{ "Sheikah Jabber Nut" },
         Text{ "Lorulean Blabber Nut" },
     };
     trickNameTable[RG_SPEAK_KOKIRI] = {
@@ -1224,6 +1245,94 @@ static void InitTrickNames() {
         Text{ "Squid-Hunt Key", "Squid-Hunt Key", "Squid-Hunt Key" },
     };
 
+    trickNameTable[RG_SHADOW_SILVER_BLADES] = {
+        // TODO_TRANSLATE
+        Text{ "Shadow Silver: Bladders" },
+    };
+    trickNameTable[RG_SHADOW_SILVER_PIT] = {
+        // TODO_TRANSLATE
+        Text{ "Shadow Silver: Bit" },
+    };
+    trickNameTable[RG_SHADOW_SILVER_SPIKES] = {
+        // TODO_TRANSLATE
+        Text{ "Shadow Silver: Spines" },
+    };
+    trickNameTable[RG_SPIRIT_SILVER_CHILD] = {
+        // TODO_TRANSLATE
+        Text{ "Spirit Silver: Chill" },
+    };
+    trickNameTable[RG_SPIRIT_SILVER_SUN] = {
+        // TODO_TRANSLATE
+        Text{ "Spirit Silver: Son" },
+    };
+    trickNameTable[RG_SPIRIT_SILVER_BOULDERS] = {
+        // TODO_TRANSLATE
+        Text{ "Spirit Silver: Bounders" },
+    };
+    trickNameTable[RG_BOTW_SILVER] = {
+        // TODO_TRANSLATE
+        Text{ "Bottom of the Well Slipper" },
+    };
+    trickNameTable[RG_ICE_CAVERN_SILVER_BLADES] = {
+        // TODO_TRANSLATE
+        Text{ "Ice Cavern Silver: Blaze" },
+    };
+    trickNameTable[RG_ICE_CAVERN_SILVER_BLOCK] = {
+        // TODO_TRANSLATE
+        Text{ "Ice Cavern Silver: Black" },
+    };
+    trickNameTable[RG_GTG_SILVER_SLOPE] = {
+        // TODO_TRANSLATE
+        Text{ "Training Ground Silver: Snope" },
+    };
+    trickNameTable[RG_GTG_SILVER_LAVA] = {
+        // TODO_TRANSLATE
+        Text{ "Traning Ground Silver: Love" },
+    };
+    trickNameTable[RG_GTG_SILVER_WATER] = {
+        // TODO_TRANSLATE
+        Text{ "Training Pound Silver: Water" },
+    };
+    trickNameTable[RG_GANONS_CASTLE_SILVER_LIGHT] = {
+        // TODO_TRANSLATE
+        Text{ "Ganon's Castle Silver: Lighter" },
+    };
+    trickNameTable[RG_GANONS_CASTLE_SILVER_FOREST] = {
+        // TODO_TRANSLATE
+        Text{ "Ganon's Castle Silver: Frost" },
+    };
+    trickNameTable[RG_GANONS_CASTLE_SILVER_FIRE] = {
+        // TODO_TRANSLATE
+        Text{ "Ganon's Castle Silver: Free" },
+    };
+    trickNameTable[RG_GANONS_CASTLE_SILVER_SPIRIT] = {
+        // TODO_TRANSLATE
+        Text{ "Ganon's Castle Silver: Sprite" },
+    };
+    trickNameTable[RG_DODONGOS_CAVERN_MQ_SILVER] = {
+        // TODO_TRANSLATE
+        Text{ "Dodongo's Cave Silver" },
+    };
+    trickNameTable[RG_SHADOW_MQ_SILVER_INVISIBLE_BLADES] = {
+        // TODO_TRANSLATE
+        Text{ "Shadow Silver: Invisible" },
+    };
+    trickNameTable[RG_SPIRIT_MQ_SILVER_LOBBY] = {
+        // TODO_TRANSLATE
+        Text{ "Spirit Silver: Foyer" },
+    };
+    trickNameTable[RG_SPIRIT_MQ_SILVER_BIG_WALL] = {
+        // TODO_TRANSLATE
+        Text{ "Spirit Silver: Brick" },
+    };
+    trickNameTable[RG_GANONS_CASTLE_MQ_SILVER_WATER] = {
+        // TODO_TRANSLATE
+        Text{ "Ganon's Castle Silver: Wheat" },
+    };
+    trickNameTable[RG_GANONS_CASTLE_MQ_SILVER_SHADOW] = {
+        // TODO_TRANSLATE
+        Text{ "Ganon's Castle Silver: Shabom" },
+    };
     /*
     //Names for individual upgrades, in case progressive names are replaced
     trickNameTable[GI_HOOKSHOT] = {
@@ -1418,7 +1527,7 @@ static void InitTrickNames() {
 }
 
 // Generate a fake name for the ice trap based on the item it's displayed as
-Text Rando::Traps::GetTrapName(uint16_t id) {
+Text Rando::Traps::GetTrapName(uint16_t id, uint64_t* state) {
     // If the trick names table has not been initialized, do so
     if (!initTrickNames) {
         InitTrickNames();
@@ -1431,19 +1540,21 @@ Text Rando::Traps::GetTrapName(uint16_t id) {
     }
 
     // Randomly get the easy, medium, or hard name for the given item id
-    return RandomElement(trickNameTable[id]);
+    return ShipUtils::RandomElement(trickNameTable[id], state);
 }
 
-RandomizerGet Rando::Traps::GetTrapTrickModel() {
+RandomizerGet Rando::Traps::GetTrapTrickModel(uint64_t* state) {
     auto ctx = Rando::Context::GetInstance();
-    RandomizerGet trickModel = RandomElementFromSet(ctx->possibleIceTrapModels);
+    RandomizerGet trickModel = ShipUtils::RandomElementFromSet(ctx->possibleIceTrapModels, state);
 
     if (trickModel == RG_EMPTY_BOTTLE) {
-        trickModel = RandomElement(Rando::StaticData::normalBottles);
+        trickModel = ShipUtils::RandomElement(Rando::StaticData::normalBottles, state);
     } else if (trickModel == RG_GUARD_HOUSE_KEY) {
-        trickModel = RandomElement(Rando::StaticData::overworldKeys);
+        trickModel = ShipUtils::RandomElement(Rando::StaticData::overworldKeys, state);
     } else if (trickModel == RG_DEATH_MOUNTAIN_CRATER_BEAN_SOUL) {
-        trickModel = RandomElement(Rando::StaticData::beanSouls);
+        trickModel = ShipUtils::RandomElement(Rando::StaticData::beanSouls, state);
+    } else if (trickModel == RG_SHADOW_SILVER_BLADES) {
+        trickModel = ShipUtils::RandomElement(Rando::StaticData::silverRupees);
     }
 
     return trickModel;
@@ -1451,16 +1562,9 @@ RandomizerGet Rando::Traps::GetTrapTrickModel() {
 
 bool Rando::Traps::ShouldJunkItemBeTrap() {
     auto ctx = Rando::Context::GetInstance();
-
-    if (ctx->GetOption(RSK_ICE_TRAP_PERCENT).Is(0)) {
-        return false;
-    }
-
-    if (ctx->GetOption(RSK_ICE_TRAP_PERCENT).Is(100) || Random(0, 100) < ctx->GetOption(RSK_ICE_TRAP_PERCENT).Get()) {
-        return true;
-    }
-
-    return false;
+    return ctx->GetOption(RSK_ICE_TRAP_PERCENT).IsNot(0) &&
+           (ctx->GetOption(RSK_ICE_TRAP_PERCENT).Is(100) ||
+            Random(0, 100) < ctx->GetOption(RSK_ICE_TRAP_PERCENT).Get());
 }
 
 static const char* const englishIceTrapMessages[] = {
@@ -1705,7 +1809,7 @@ static const char* const frenchIceTrapMessages[] = {
     "Tu savais que le G de ZFG signifie #Glace#?",
     "Tu as obtenu #L'Âge de Glace (2002)#!",
     "Maintenant, tu peux lancer un #sort# que tu ne connais pas.",
-    "Que dirais-tu d'un héros #sur glace# ?",
+    "Que dirais-tu d'un héros #sur glace#?",
     "Pas de tunique pour #ça#!",
     "Je savais que tu étais #partiellement Metroid#!",
     "Voilà juste la #cerise sur le gâteau#!",
@@ -1726,7 +1830,7 @@ static const char* const frenchIceTrapMessages[] = {
     "#Continue#",
     "QU'EST-CE QU'ELLE VA FAIRE, ME FAIRE UNE #[Glace]#!?",
     "Tu as rencontré un #terrible destin#, n'est-ce pas?",
-    "Alors comme ça, tu aimes Shining ? Voici comment ça #finit#.",
+    "Alors comme ça, tu aimes Shining? Voici comment ça #finit#.",
     "Petite erreur de trajectoire. #Je gagne#.",
     "Prends ce #L#, @.",
     "#Problème de compétence#",
